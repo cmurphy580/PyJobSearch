@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html style="background-color: #333333;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-capable" content="yes">
+    <title>{{ title }}</title>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
+    <link rel="stylesheet" href= "{{ url_for('static',filename='../static/new_account.css') }}" type="text/css">
+</head>
+<body style="margin: 0; padding: 0;">
+<div class="new-background">
+    <h1 class="new-title">Web & Software Development Jobs & Internships</h1>
+    <p class="new-sub">Create an Account</p>
+    <div class="new-container">
+        <div class="new-loading" id="loader"><div class="new-loading2" id="loader"><div class="new-loading3" id="loader"></div></div></div>
+        {% block content %}
+        <form class="new-form" action="{{ url_for('create_account') }}" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <br>
+            {{ form.username(size=32, class="login-input", placeholder="Username") }}
+            <br>
+            {% for error in form.username.errors %}
+            <span style="color: orange;">[{{ error }}]</span>
+            {% endfor %} 
+            <br>
+            {{ form.password(size=32, class="login-input", placeholder="Password") }}
+            <br>
+            {% if form.password.data == None and form.username.data != None %}
+            <span style="color: orange;">[Need a Password]</span>
+            {% endif %}
+            {% for error in form.username.errors %}
+            <span style="color: orange;">[{{ error }}]</span>
+            {% endfor %}
+            <!--<p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>-->
+            <br>
+            {{ form.submit(class="submit button") }}
+            <a id="button" class="button" href="/">Back</a>
+        </form>
+        {% endblock %}
+    </div>
+</div>
+</body>
+<script>
+    let submitBtn = document.querySelector(".button"),
+        form = document.querySelector(".new-form"),
+        loadingSub = document.querySelector(".new-sub"),
+        loading = document.querySelector(".new-loading"),
+        loading2 = document.querySelector(".new-loading2"),
+        loading3 = document.querySelector(".new-loading3"),
+        loginBackground = document.querySelector(".new-background");
+
+    submitBtn.addEventListener("click", (event) => {
+        loginBackground.style.display = "none";
+        form.style.display = "none";
+        submitBtn.style.display = "none";
+        setTimeout(() => {
+            loginBackground.classList.add("animated", "fadeIn");
+            loginBackground.style.display = "";
+            loadingSub.innerHTML = "Pulling Data Will Take a Minute";
+            loading.style.display = "flex";
+            loading2.style.display = "flex";
+            loading3.style.display = "flex";
+        }, 250);
+    });
+
+    form.addEventListener("submit", (event) => {
+        loginBackground.style.display = "none";
+        form.style.display = "none";
+        submitBtn.style.display = "none";
+        setTimeout(() => {
+            loginBackground.classList.add("animated", "fadeIn");
+            loginBackground.style.display = "";
+            loadingSub.innerHTML = "Pulling Data Will Take a Minute";
+            loading.style.display = "flex";
+            loading2.style.display = "flex";
+            loading3.style.display = "flex";
+        }, 250);
+    });
+</script>
+</html>

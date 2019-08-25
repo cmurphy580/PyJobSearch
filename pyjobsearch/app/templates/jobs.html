@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-capable" content="yes">
+    <title>{{ title }}</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js" data-auto-replace-svg="nest"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href= "{{ url_for('static',filename='../static/jobs.css') }}" type="text/css">
+</head>
+<body>
+{% block content %}
+<section class="header">
+    <h1 class="title">DevJobs</h1>
+    <form class="search_form" id="search_input" method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token() }}
+        {{ form.user_input(size=32, class="search_input", placeholder="Search Location, Company, or Keywords in Job Title") }}
+        {{ form.submit(form="search_input", class="search_btn") }}
+    </form>
+    <div class="menu">
+        <a id="menu-icon" class="far fa-user-circle" ></a>
+        <a href="/jobs/{{ user['ID'] }}/favorites" class="favorites-btn">Favorites</a>
+        <a href="/" class="home-btn">Logout</a>
+    </div>
+</section>
+<section class="jobs-background">
+    <div class="title-wrap">
+        <h3>Internships & Entry-Level Jobs</h3><p>Posted in the last 24 hours</p>
+    </div>
+    <div class="jobs-container" data-count="{{ job_count }}">
+        {% for i in range(job_count) %}
+            <div class="job-container">
+                <div class="favorite">
+                    {% if jobs[i].favorite  %}
+                        <label for="{{ jobs[i].idx }}" class="medium material-icons">bookmark</label>
+                        <form onclick="favorite_job();" class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                            {{ forms[i].hidden_tag() }}
+                            {{ forms[i].csrf_token() }}
+                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", onchange="this.form.submit()", value=jobs[i], checked=True) }}
+                        </form>
+                    {% else %}
+                        <label for="{{ jobs[i].idx }}" class="medium material-icons" unchecked>bookmark_border</label>
+                        <form onclick="favorite_job();" id="{{ i }} " class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                            {{ forms[i].hidden_tag() }}
+                            {{ forms[i].csrf_token() }}
+                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", onchange="this.form.submit()", value=jobs[i], style="float: right;", checked=False) }}
+                        </form>
+                    {% endif %}
+                </div>
+                <a href="{{ jobs[i].link }}" target="_blank">
+                    <div class="job-info">
+                        <p class="title-text">{{ jobs[i].title }}</p>
+                        <p class="sub-text">{{ jobs[i].company }}</p>
+                        <p class="sub-text" >{{ jobs[i].location }}</p>
+                        <p class="sub-text">{{ jobs[i].date }}</p>
+                        <img class="logo" src="{{ jobs[i].logo }}" alt="logo">
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+<section class="footer">
+    <a href="/">Logout</a>
+</section>
+</body>
+<script>
+    // css for menu button
+    let menu = document.querySelector(".menu"),
+        favoritesBtn = document.querySelector(".favorites-btn"),
+        homeBtn = document.querySelector(".home-btn"),
+        menuClicked = false;
+        
+    menu.addEventListener("click", () => {
+        menuClicked = !menuClicked;
+        if (menuClicked) {
+            favoritesBtn.style.display = "block";
+            homeBtn.style.display = "block";
+            menu.style.marginTop = `${favoritesBtn.offsetHeight}px`;
+        } else {
+            favoritesBtn.style.display = "none"; 
+            homeBtn.style.display = "none";
+            menu.style.marginTop = "";
+        }
+    });
+    // css for favorites icon 
+    let favoriteIcons = document.querySelectorAll(".favorite")
+        favorite = false,
+        submitBtn = document.querySelector(".submit-favorites-btn"),
+        favoriteForms = document.querySelector(".favorite_input");
+
+    favoriteIcons.forEach(icon => icon.addEventListener("click", (event) => {
+        favorite = !favorite;
+        if (favorite || icon.children[0].dataset.favorite == "True") {
+            icon.children[0].innerHTML = "bookmark";
+        } else {
+            icon.children[0].innerHTML = "bookmark_border";  
+        }
+    }));
+    /*
+    document.querySelectorAll(".favorite_form").forEach(form => {
+        form.addEventListener("click", function(event) {
+            job_data = {
+                "turd" : "turd here",
+                "data" : "data"
+            };
+            fetch(`${window.location}`, {
+                method: "POST",
+                credentials: "include",
+                body: JSON.stringify(job_data),
+                cache: "no-cache",
+                headers: new Headers({
+                    "content-type": "application/json"
+                })
+            });
+        });
+    });
+    */
+   /*
+    // improved ui for form submission
+    function favorite_job() { 
+        let job; 
+
+        job_data = {
+            "turd" : "turd here",
+            "job" : "job"
+        };
+
+        fetch(`${window.location}`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(job_data),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        });
+    }
+    */
+</script>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-capable" content="yes">
+    <title>{{ title }}</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js" data-auto-replace-svg="nest"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href= "{{ url_for('static',filename='../static/favorites.css') }}" type="text/css">
+</head>
+<body>
+<section class="favorites-header">
+    <h1 class="title">DevJobs</h1>
+    <div class="menu">
+        <a id="menu-icon" class="far fa-user-circle"></a>
+        <a href="/jobs/{{ user.ID }}" class="back-btn">Back</a>
+        <a href="/" class="home-btn">Logout</a>
+    </div>
+</section>
+<section class="favorites-background">
+    <div class="favorites-title-wrap">
+        <h3>Your Favorites List</h3><p>All Bookmarked Jobs</p>
+    </div>
+    <div class="favorites-container" data-count="{{ job_count }}">
+        {% for i in range(job_count) %}
+            <div class="favorite-container">
+                <div class="favorite">
+                    {% if jobs[i].favorite  %}
+                        <label for="{{ jobs[i].idx + i }}" class="medium material-icons">bookmark</label>
+                        <form class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                            {{ forms[i].hidden_tag() }}
+                            {{ forms[i].csrf_token() }}
+                            {{ forms[i].add_to_favorites(id=jobs[i].idx + i, class="favorite_input", onchange="this.form.submit()", value=jobs[i], checked=True) }}
+                        </form>
+                    {% endif %}
+                </div>
+                <a href="{{ jobs[i].link }}" target="_blank">
+                    <div class="job-info">
+                        <p class="title-text">{{ jobs[i].title }}</p>
+                        <p class="sub-text">{{ jobs[i].company }}</p>
+                        <p class="sub-text">{{ jobs[i].location }}</p>
+                        <p class="sub-text">{{ jobs[i].date }}</p>
+                        <img class="logo" src="{{ jobs[i].logo }}" alt="logo">
+                    </div>
+                </a>
+            </div>
+    {% endfor %}
+    </div>
+</section>
+<section class="footer">
+    <a href="/jobs/{{ user.ID }}">Back</a>
+</section>
+</body>
+<script>
+    // css for menu button
+    let menu = document.querySelector(".menu"),
+        backBtn = document.querySelector(".back-btn"),
+        homeBtn = document.querySelector(".home-btn"),
+        menuClicked = false;
+
+    menu.addEventListener("click", () => {
+        menuClicked = !menuClicked;
+        if (menuClicked) {
+            console.log(menuClicked);
+            backBtn.style.display = "block";
+            homeBtn.style.display = "block";
+            menu.style.marginTop = `${backBtn.offsetHeight}px`;
+        } else {
+            backBtn.style.display = "none"; 
+            homeBtn.style.display = "none";
+            menu.style.marginTop = "";
+        }
+    });
+    // css for favorites icon 
+    let favoriteIcons = document.querySelectorAll(".favorite")
+        favorite = false;
+
+    favoriteIcons.forEach(icon => icon.addEventListener("click", (event) => {
+        favorite = !favorite;
+        if (favorite || icon.children[0].dataset.favorite == "True") {
+            icon.children[0].innerHTML = "bookmark";
+        } else {
+            icon.children[0].innerHTML = "bookmark_border";
+        }
+    }));
+</script>
+</html>
