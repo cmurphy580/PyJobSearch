@@ -15,9 +15,9 @@ class LoginForm(FlaskForm):
 
 
 class FilterDataForm(FlaskForm):
-    user_input = StringField("")
+    searched = StringField("")
     submit = SubmitField("Search")
 
 
 class FavoritesForm(FlaskForm):
-    add_to_favorites = BooleanField(default=False)
+    add_to_favorites = BooleanField()

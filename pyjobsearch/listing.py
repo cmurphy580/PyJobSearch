@@ -12,7 +12,7 @@ class Listing():
         self.description = ""
         self.favorite = False
 
-    def __eq__(self, other):  # not working
+    def __eq__(self, other):
         return True if self.title == other["title"] and self.company == other["company"] or self.title == other["title"] and self.link == other["link"] else False
 
     def to_dict(self):

@@ -28,11 +28,18 @@
             <div class="favorite-container">
                 <div class="favorite">
                     {% if jobs[i].favorite  %}
-                        <label for="{{ jobs[i].idx + i }}" class="medium material-icons">bookmark</label>
+                        <label for="{{ i }}" class="medium material-icons">bookmark</label>
                         <form class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
                             {{ forms[i].hidden_tag() }}
                             {{ forms[i].csrf_token() }}
-                            {{ forms[i].add_to_favorites(id=jobs[i].idx + i, class="favorite_input", onchange="this.form.submit()", value=jobs[i], checked=True) }}
+                            {{ forms[i].add_to_favorites(id=i, class="favorite_input", data_user=user['ID'], value=jobs[i], checked=True) }}
+                        </form>
+                    {% else %}
+                        <label for="{{ i }}" class="medium material-icons" unchecked>bookmark_border</label>
+                        <form class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                            {{ forms[i].hidden_tag() }}
+                            {{ forms[i].csrf_token() }}
+                            {{ forms[i].add_to_favorites(id=i, class="favorite_input", data_user=user['ID'], value=jobs[i], checked=False) }}
                         </form>
                     {% endif %}
                 </div>
@@ -56,34 +63,49 @@
 <script>
     // css for menu button
     let menu = document.querySelector(".menu"),
+        menuBtn = document.getElementById("menu-icon"),
+        menuBtnDimensions = menuBtn.getBoundingClientRect(),
         backBtn = document.querySelector(".back-btn"),
-        homeBtn = document.querySelector(".home-btn"),
+        logoutBtn = document.querySelector(".home-btn"),
         menuClicked = false;
 
     menu.addEventListener("click", () => {
         menuClicked = !menuClicked;
         if (menuClicked) {
-            console.log(menuClicked);
             backBtn.style.display = "block";
-            homeBtn.style.display = "block";
-            menu.style.marginTop = `${backBtn.offsetHeight}px`;
+            backBtn.style.position = "absolute";
+            backBtn.style.top = `${menuBtnDimensions.top + (menuBtnDimensions.height - 2.5)}px`;
+            backBtn.style.right = "0px";
+            logoutBtn.style.display = "block";
+            logoutBtn.style.position = "absolute";
+            logoutBtn.style.top = `${backBtn.getBoundingClientRect().top + (backBtn.getBoundingClientRect().height - 17)}px`;
+            logoutBtn.style.right = "0px";
         } else {
             backBtn.style.display = "none"; 
-            homeBtn.style.display = "none";
-            menu.style.marginTop = "";
+            logoutBtn.style.display = "none";
+            menu.style.top = "";
         }
     });
-    // css for favorites icon 
-    let favoriteIcons = document.querySelectorAll(".favorite")
-        favorite = false;
+    $(document).ready(function() {
+        $(".favorite_input").on("change", function(event) {
+            event.preventDefault();
+            // css for favorite icons
+            if (this.checked) {   
+                this.parentNode.previousElementSibling.innerHTML = "bookmark";
+            } else {
+                this.parentNode.previousElementSibling.innerHTML = "bookmark_border";    
+            }
+            $.ajax({
+                data : {
+                    checked : this.checked,
+                    job : this.value,
+                    id : this.id
+                },
+                type : "POST",
+                url : `/jobs/${this.dataset.user}/favorites`
+            });
+        }); 
+    }); 
 
-    favoriteIcons.forEach(icon => icon.addEventListener("click", (event) => {
-        favorite = !favorite;
-        if (favorite || icon.children[0].dataset.favorite == "True") {
-            icon.children[0].innerHTML = "bookmark";
-        } else {
-            icon.children[0].innerHTML = "bookmark_border";
-        }
-    }));
 </script>
 </html>

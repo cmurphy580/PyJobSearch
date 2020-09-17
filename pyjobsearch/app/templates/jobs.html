@@ -14,14 +14,19 @@
 {% block content %}
 <section class="header">
     <h1 class="title">DevJobs</h1>
-    <form class="search_form" id="search_input" method="POST" novalidate>
-        {{ form.hidden_tag() }}
-        {{ form.csrf_token() }}
-        {{ form.user_input(size=32, class="search_input", placeholder="Search Location, Company, or Keywords in Job Title") }}
-        {{ form.submit(form="search_input", class="search_btn") }}
-    </form>
+    <div id="search-menu" class="search-menu">
+        <a id="search-icon" class="fas fa-search"></a>
+    </div>
+    <div class="search-container">
+        <form class="search_form" id="search_input" data-user="{{ user['ID']}}" method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            {{ form.csrf_token() }}
+            {{ form.searched(size=32, class="search_input", placeholder="Search Jobs (for state search enter state abbreviation)") }}
+            {{ form.submit(form="search_input", class="search_btn") }}
+        </form>
+    </div>
     <div class="menu">
-        <a id="menu-icon" class="far fa-user-circle" ></a>
+        <a id="menu-icon" class="far fa-user-circle"></a>
         <a href="/jobs/{{ user['ID'] }}/favorites" class="favorites-btn">Favorites</a>
         <a href="/" class="home-btn">Logout</a>
     </div>
@@ -36,17 +41,17 @@
                 <div class="favorite">
                     {% if jobs[i].favorite  %}
                         <label for="{{ jobs[i].idx }}" class="medium material-icons">bookmark</label>
-                        <form onclick="favorite_job();" class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                        <form class="favorite_form" method="POST" novalidate>   
                             {{ forms[i].hidden_tag() }}
                             {{ forms[i].csrf_token() }}
-                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", onchange="this.form.submit()", value=jobs[i], checked=True) }}
+                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", value=jobs[i], data_user=user['ID'], checked=True) }}
                         </form>
                     {% else %}
                         <label for="{{ jobs[i].idx }}" class="medium material-icons" unchecked>bookmark_border</label>
-                        <form onclick="favorite_job();" id="{{ i }} " class="favorite_form" method="POST" data-user="{{ user['ID']}}" novalidate>
+                        <form id="{{ i }} " class="favorite_form" method="POST" novalidate>
                             {{ forms[i].hidden_tag() }}
                             {{ forms[i].csrf_token() }}
-                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", onchange="this.form.submit()", value=jobs[i], style="float: right;", checked=False) }}
+                            {{ forms[i].add_to_favorites(id=jobs[i].idx, class="favorite_input", value=jobs[i], data_user=user['ID'], style="float: right;", checked=False) }}
                         </form>
                     {% endif %}
                 </div>
@@ -71,75 +76,72 @@
 <script>
     // css for menu button
     let menu = document.querySelector(".menu"),
+        menuBtn = document.getElementById("menu-icon"),
+        menuBtnDimensions = menuBtn.getBoundingClientRect(),
         favoritesBtn = document.querySelector(".favorites-btn"),
-        homeBtn = document.querySelector(".home-btn"),
-        menuClicked = false;
+        logoutBtn = document.querySelector(".home-btn"),
+        menuClicked = false,
+        searchIconClicked = false;
         
     menu.addEventListener("click", () => {
-        menuClicked = !menuClicked;
-        if (menuClicked) {
+        if (!searchIconClicked) menuClicked = !menuClicked;
+        if (menuClicked && !searchIconClicked) {
             favoritesBtn.style.display = "block";
-            homeBtn.style.display = "block";
-            menu.style.marginTop = `${favoritesBtn.offsetHeight}px`;
+            favoritesBtn.style.top = `${menuBtnDimensions.top + (menuBtnDimensions.height - 2.5)}px`;
+            logoutBtn.style.display = "block";
+            logoutBtn.style.top = `${favoritesBtn.getBoundingClientRect().top + (favoritesBtn.getBoundingClientRect().height - 17)}px`;
         } else {
             favoritesBtn.style.display = "none"; 
-            homeBtn.style.display = "none";
-            menu.style.marginTop = "";
+            logoutBtn.style.display = "none";
         }
     });
-    // css for favorites icon 
-    let favoriteIcons = document.querySelectorAll(".favorite")
-        favorite = false,
-        submitBtn = document.querySelector(".submit-favorites-btn"),
-        favoriteForms = document.querySelector(".favorite_input");
 
-    favoriteIcons.forEach(icon => icon.addEventListener("click", (event) => {
-        favorite = !favorite;
-        if (favorite || icon.children[0].dataset.favorite == "True") {
-            icon.children[0].innerHTML = "bookmark";
+    // css for search icon (less 650px)
+    let searchIcon = document.getElementById("search-menu"),
+        searchContainer = document.querySelector(".search-container");
+    
+    searchIcon.addEventListener("click", () => {
+        if (!menuClicked) searchIconClicked = !searchIconClicked;
+        if (searchIconClicked && !menuClicked) {
+            searchContainer.style.display = "flex";
+            searchContainer.style.top = `${searchIcon.getBoundingClientRect().top + searchIcon.getBoundingClientRect().height + 5}px`;
         } else {
-            icon.children[0].innerHTML = "bookmark_border";  
+            searchContainer.style.display = "";
         }
-    }));
-    /*
-    document.querySelectorAll(".favorite_form").forEach(form => {
-        form.addEventListener("click", function(event) {
-            job_data = {
-                "turd" : "turd here",
-                "data" : "data"
-            };
-            fetch(`${window.location}`, {
-                method: "POST",
-                credentials: "include",
-                body: JSON.stringify(job_data),
-                cache: "no-cache",
-                headers: new Headers({
-                    "content-type": "application/json"
-                })
-            });
-        });
     });
-    */
-   /*
-    // improved ui for form submission
-    function favorite_job() { 
-        let job; 
-
-        job_data = {
-            "turd" : "turd here",
-            "job" : "job"
-        };
-
-        fetch(`${window.location}`, {
-            method: "POST",
-            credentials: "include",
-            body: JSON.stringify(job_data),
-            cache: "no-cache",
-            headers: new Headers({
-                "content-type": "application/json"
-            })
+    $(document).ready(function() {
+        /*
+        $(".search_form").on("change", function(event) {
+            event.preventDefault();
+            $.ajax({
+                data : {
+                    searched : $(".search_input").val()
+                },
+                type : "POST",
+                url : `/jobs/${this.dataset.user}`
+            });
+            this.form.submit();
         });
-    }
-    */
+        */
+        $(".favorite_input").on("change", function(event) { 
+            event.preventDefault();
+            // css for favorites icon
+            if (this.checked) {   
+                this.parentNode.previousElementSibling.innerHTML = "bookmark";
+            } else {
+                this.parentNode.previousElementSibling.innerHTML = "bookmark_border";  
+            }
+            $.ajax({
+                data : {
+                    checked : this.checked,
+                    job : this.value,
+                    id : this.id
+                },
+                type : "POST",
+                url : `/jobs/${this.dataset.user}`
+            });
+        }); 
+    }); 
+    /**/
 </script>
 </html>

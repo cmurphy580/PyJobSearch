@@ -20,31 +20,28 @@ def listing_filter(title):
             return True
     return False
 
+
 ''''''
 ''''''
 # LINKEDIN FUNCTION
-linkedin_url_web = "https://www.linkedin.com/jobs/search?pageNum=0&position=1&keywords=ENTRY%20LEVEL%20WEB%20DEVELOPER&location=United%20States&f_TP=1&f_E=2&f_T=100%2C25167%2C25170%2C25194"
-linkedin_url_software = "https://www.linkedin.com/jobs/search?keywords=Entry%20Level%20software%20Developer&location=United%20States&pageNum=0&position=1&f_TP=1&f_E=2&f_T=9%2C24%2C509%2C1180%2C1397%2C3549"
+linkedin_url_web = "https://www.linkedin.com/jobs/search/?f_E=2&f_T=100%2C25167%2C25170%2C25194&f_TP=1&f_TPR=r86400&keywords=entry%20level%20web%20developer&location=United%20States"
+linkedin_url_software = "https://www.linkedin.com/jobs/search/?f_E=2&f_T=9%2C24%2C509%2C1180%2C1397%2C3549&f_TP=1&f_TPR=r86400&keywords=entry%20level%20software%20developer&location=United%20States"
 
 
 def linkedin_jobs(url):
     req = requests.get(url, headers={"User-agent": "job_bot 1.0"})
     soup = BeautifulSoup(req.content, "html.parser")
-    tags = soup.findAll("li", class_="jobs-search-result-item")
+    tags = soup.html.body.findAll("div", class_="result-card__contents job-result-card__contents")
+    # print(len(tags))
     for tag in tags:
-        title = tag.a.div.h3.text
-        if listing_filter(title):
-            listing = Listing()
-            listing.title = title[:35] + "..." if len(title) > 40 else title
-            listing.company = tag.a.div.h4.text
-            listing.location = tag.a.div.p.text
-            listing.date = tag.find("span", "listed-job-posting__flavor posted-time-ago__text").text
-            listing.link = tag.a.get("href")
-            listing.logo = "https://cdn4.iconfinder.com/data/icons/flat-icon-social-media/256/Linkedin.png"
-            for job in jobs:
-                if listing == job:
-                    continue
-            jobs.append(listing.to_dict())
+        listing = Listing()
+        listing.title = tag.h3.text[:35] + "..." if len(tag.h3.text) > 40 else tag.h3.text
+        listing.company = tag.h4.a.text
+        listing.location = tag.div.span.text
+        listing.date = tag.time.text
+        listing.link = tag.h4.a.get("href")
+        listing.logo = "https://cdn4.iconfinder.com/data/icons/flat-icon-social-media/256/Linkedin.png"
+        jobs.append(listing.to_dict())
 
 
 linkedin_jobs(linkedin_url_web)
@@ -55,35 +52,40 @@ linkedin_jobs(linkedin_url_software)
 glassdoor_url_web = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=entry%20level%20web%20developer&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
 glassdoor_web_interns = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=web%20developer%20internship&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
 glassdoor_url_software_d = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Entry%20Level%20Software%20developer&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
-# glassdoor_url_software_e = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Entry%20Level%20Software%20engineer&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
+glassdoor_url_software_e = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Entry%20Level%20Software%20engineer&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
 glassdoor_software_interns = "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=software%20developer%20internship&locT=&locId=0&locKeyword=&jobType=all&fromAge=1&minSalary=0&includeNoSalaryJobs=true&radius=25&cityId=-1&minRating=0.0&industryId=-1&gocId=-1&companyId=-1&employerSizes=0&applicationType=0&remoteWorkType=0"
 
 
 def glassdoor_jobs(url):
     req = requests.get(url, headers={"User-agent": "job_bot 1.0"})
     soup = BeautifulSoup(req.content, "html.parser")
-    tags = soup.findAll("div", class_="jobContainer")
+    tags = soup.findAll("li", class_="jl react-job-listing gdGrid")
+    print(len(tags))
     for tag in tags:
         listing = Listing()
-        title = tag.contents[1].text
+        title = tag.find("a", class_="jobInfoItem jobTitle css-13w0lq6 eigr9kq1 jobLink").span.text
         listing.title = title[:35] + "..." if len(title) > 40 else title
-        listing.company = tag.find("div", class_="jobInfoItem jobEmpolyerName").text
+        listing.company = tag.find("div", class_="jobHeader d-flex justify-content-between align-items-start").a.span.text
         salary = tag.find("div", class_="salaryEstimate ")
         listing.salary = salary.span.span.text if salary is not None else "Not Listed"
-        location = tag.find("div", class_="jobInfoItem empLoc")
+        location = tag.find("div", class_="d-flex flex-wrap css-yytu5e e1rrn5ka1")
         listing.location = location.span.text if location is not None else "US"
         listing.date = "24hr"
         listing.link = "https://www.glassdoor.com" + tag.find("a", class_="jobLink").get("href")
         listing.logo = "https://www.adweek.com/agencyspy/wp-content/uploads/sites/7/2016/01/glassdoor.jpg"
+        exists = False
         for job in jobs:
             if listing == job:
-                continue
-        jobs.append(listing.to_dict())
+                exists = True
+                break
+        if not exists:
+            jobs.append(listing.to_dict())
+
 
 glassdoor_jobs(glassdoor_url_web)
 glassdoor_jobs(glassdoor_web_interns)
 glassdoor_jobs(glassdoor_url_software_d)
-# glassdoor_jobs(glassdoor_url_software_e) # similar to developer jobs
+glassdoor_jobs(glassdoor_url_software_e) # similar to developer jobs
 glassdoor_jobs(glassdoor_software_interns)
 ''''''
 ''''''
@@ -109,10 +111,13 @@ def monster_jobs(url):
             listing.date = tag.find("div", class_="meta flex-col").time.get("datetime")[:-6]
             listing.link = tag.find("h2", class_="title").a.get("href")
             listing.logo = "https://games.lol/wp-content/uploads/2018/10/monster-search-best-pc-download-online.png"
+            exists = False
             for job in jobs:
                 if listing == job:
-                    continue
-            jobs.append(listing.to_dict())
+                    exists = True
+                    break
+            if not exists:
+                jobs.append(listing.to_dict())
 
 
 monster_jobs(monster_url_web)
@@ -135,21 +140,24 @@ def indeed_jobs(url):
     soup = BeautifulSoup(req.content, "html.parser")
     tags = soup.findAll("div", class_="jobsearch-SerpJobCard")
     for tag in tags:
-        title = tag.find("div", class_="title").a.text.strip()
+        title = tag.find("h2", class_="title").a.get("title").strip()
         if listing_filter(title):
             listing = Listing()
             listing.title = title[:35] + "..." if len(title) > 40 else title # 75 and 80
             listing.company = tag.find("div", class_="sjcl").div.span.text.lstrip()
-            salary = tag.find("span", class_="salary no-wrap")
+            salary = tag.find("span", class_="salaryText")
             listing.salary = salary.text.lstrip() if salary is not None else "Not Listed"
-            listing.location = tag.find("div", class_="recJobLoc")["data-rc-loc"]
+            listing.location = tag.find("div", class_="recJobLoc")["data-rc-loc"] # same as .get("data-rc-loc")
             listing.date = (date.today() - timedelta(days=1)).strftime('%y-%m-%d')
             listing.link = f"https://www.google.com/search?q={title}+{listing.company}+{listing.location}+{listing.date}+job+opening"
             listing.logo = "https://is2-ssl.mzstatic.com/image/thumb/Purple118/v4/ab/03/b8/ab03b82b-12cf-ce7c-249f-b54a8f01c1b9/AppIcon-1x_U007emarketing-85-220-0-6.png/246x0w.jpg"
+            exists = False
             for job in jobs:
                 if listing == job:
-                    continue
-            jobs.append(listing.to_dict())
+                    exists = True
+                    break
+            if not exists:
+                jobs.append(listing.to_dict())
 
 
 indeed_jobs(indeed_url_web)
@@ -221,15 +229,14 @@ craigs_jobs(craigslist_url_software_or)
 craigs_jobs(craigslist_url_software_az)
 craigs_jobs(craigslist_url_software_co)
 '''
-''''''
+'''
 # GOOGLE CAREERS
 # google_url_web = "https://www.google.com/search?q=entry+level+web+developer+jobs&ibp=htl;jobs#fpstate=tldetail&htichips=date_posted:today&htidocid=ziFYbdR-ytsLOYbPAAAAAA%3D%3D&htischips=date_posted;today&htivrt=jobs"
 # google_url_software = "https://www.google.com/search?q=entry+level+software+developer+jobs&ibp=htl;jobs#fpstate=tldetail&htichips=date_posted:today&htidocid=L7MdHDNb59o9XyVPAAAAAA%3D%3D&htischips=date_posted;today&htivrt=jobs"
-''''''
-''''''
+'''
 filtered_jobs = list(filter(lambda job: "Revature" not in job["company"], jobs))
 # print(jobs)
-# print(len(jobs))
+print(len(jobs))
 idx = 0
 for job in filtered_jobs:
     job["idx"] = idx

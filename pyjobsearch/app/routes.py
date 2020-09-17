@@ -11,6 +11,7 @@ import runpy
 from datetime import datetime
 from user import User
 import ast
+import urllib.parse
 ''''''
 ''''''
 
@@ -86,51 +87,38 @@ def create_account():
     return render_template("new_account.html", title="New Account", form=form, user_data=new_account)
 
 
-def bookmark_jobs(jobs, user_data, users_data, forms, not_display_favorites):
-    # function handles when a job is bookmarked. will write the date to user json file and jobs json file.
-    favorites = list(map(lambda favorite: list(favorite.values())[:-3], user_data["favorites"]))
-    # check if jobs have been bookmarked/ favorited
-    for job in jobs:
-        if list(job.values())[:-3] in favorites:
-            job["favorite"] = True
-        else:
-            job["favorite"] = False
-
+def bookmark_jobs(jobs, user_data, users_data, forms, displaying_favorites, request_info):
+    print("bookmark jobs function")
+    favorites = [list(favorite.values())[:-5] for favorite in user_data["favorites"]]
     try:
-        if request.method == "POST" and "-csrf_token" in list(request.form.to_dict())[0]:
-            # idx == index of job to be favorited - got index from request form
-            idx = int((list(request.form.to_dict())[0]).split("-")[0])
-            if idx == len(jobs):
-                idx -= 1
-            print(idx)
-            print(len(jobs))
-            job = jobs[idx]
-            job["favorite"] = forms[idx].add_to_favorites.data
-            print("Job Selected")
-            print(job)
-
-            if job["favorite"] is True and list(job.values())[:-3] not in favorites:
-                print("adding")
-                # add to user favorites
-                user_data["favorites"].append(job)
-            elif job["favorite"] is False and list(job.values())[:-3] in favorites:
-                print("removing")
-                # remove from user favorites
-                user_data["favorites"] = [favorite for favorite in user_data["favorites"] if list(favorite.values())[:-3] != list(job.values())[:-3]]
-
-            if not_display_favorites:
-                # update job values
-                jobs.pop(idx)
-                jobs.insert(idx, job)
-                with open('jobs.json', 'w') as jsonfile:  # seperate function (jobs-w)
-                    jsonfile.write(json.dumps(jobs))
-                    jsonfile.close()
-
-            # modify users data
-            users_data.append(user_data)
-            with open('users.json', 'w') as jsonfile:  # seperate function (users-w)
-                jsonfile.write(json.dumps(users_data))
+        idx = int(request_info["id"])
+        job = jobs[idx]
+        if request_info["checked"] == "true":
+            job["favorite"] = True
+        elif request_info["checked"] == "false":
+            job["favorite"] = False
+        print("Job Selected")
+        print(job)
+        if job["favorite"] is True and list(job.values())[:-5] not in favorites:
+            print("adding")
+            # add to user favorites
+            user_data["favorites"].append(job)
+        elif job["favorite"] is False and list(job.values())[:-5] in favorites:
+            print("removing")
+            # remove from user favorites
+            user_data["favorites"] = [favorite for favorite in user_data["favorites"] if list(favorite.values())[:-5] != list(job.values())[:-5]]
+        if not displaying_favorites:
+            # update job values
+            jobs.pop(idx)
+            jobs.insert(idx, job)
+            with open('jobs.json', 'w') as jsonfile:  # seperate function (jobs-w)
+                jsonfile.write(json.dumps(jobs))
                 jsonfile.close()
+        # modify users data
+        users_data.append(user_data)
+        with open('users.json', 'w') as jsonfile:  # seperate function (users-w)
+            jsonfile.write(json.dumps(users_data))
+            jsonfile.close()
     except Exception:
         pass
 
@@ -146,58 +134,49 @@ def display_jobs(user_id):
             user_data = user
     user_idx = users_data.index(user_data)
     users_data.pop(user_idx)
-
     # Get JOB Data
+    jobs = None
     with open("jobs.json", "r+") as jsonfile:  # seperate function (jobs-r)
-        unfiltered_jobs = json.loads(jsonfile.read())
+        jobs = json.loads(jsonfile.read())
         jsonfile.close()
-
-    # TEST
-    '''
-    TEST TEST TEST TEST
-    '''
-
-    req = request.get_json()
-    print("TESTTESTTESTTESTTESTTESTTEST")
-    print(req)
-
-    '''
-    TEST TEST TEST TEST
-    '''
-    # TEST
-
-
-    # SEARCH SECTION
+    job_count = len(jobs)
+    # create forms for each jobs
     form = FilterDataForm()
+    forms = []
+    favorites = [list(favorite.values())[:-5] for favorite in user_data["favorites"]]
+    for job in jobs:
+        # adding forms for each job
+        forms.append(FavoritesForm(prefix=str(job["idx"])))
+        # check if jobs have been bookmarked/ favorited
+        if list(job.values())[:-5] in favorites:
+            job["favorite"] = True
+        else:
+            job["favorite"] = False
+    # Handling requests for search input and bookmark inputs
     user_input = None
-    if request.method == "POST" and "submit" in list(request.form.to_dict()) and len(form.user_input.data) > 0:
-        # if form.submit.data and form.validate():
+    request_info = request.form.to_dict()
+    # SEARCH SECTION
+    if request.method == "POST" and "searched" in list(request_info) and len(request_info["searched"]) > 0:
         print("here1")
-        user_input = form.user_input.data
-        jobs = list(filter(lambda job: user_input.lower() in job["title"].lower() or user_input.lower() in job["location"].lower() or user_input.lower() in job["company"].lower(), unfiltered_jobs))
+        user_input = request_info["searched"]
+        print(user_input)
+        # change jobs depending on search criteria
+        if len(user_input) == 2 and len(job["location"]) > 2:
+            jobs = [job for job in jobs if user_input.lower() == job["location"][-2:].lower()]
+        else:
+            jobs = [job for job in jobs if user_input.lower() in job["title"].lower() or user_input.lower() in job["location"].lower() or user_input.lower() in job["company"].lower()]
+        # jobs = list(filter(lambda job: user_input.lower() in job["title"].lower() or user_input.lower() in job["location"].lower() or user_input.lower() in job["company"].lower(), jobs))          
         job_count = len(jobs)
         # create forms for each job
         forms = []
-        print(job_count)
+        # for job in jobs:
         for job in jobs:
             forms.append(FavoritesForm(prefix=str(job["idx"])))
-
-        # BOOKMARK SECTION
-        not_display_favorites = True
-        bookmark_jobs(jobs, user_data, users_data, forms, not_display_favorites)
-    else:
+    # BOOKMARK SECTION
+    elif request.method == "POST" and "checked" in list(request_info):
         print("here2")
-        jobs = unfiltered_jobs
-        job_count = len(jobs)
-        # create forms for each job
-        forms = []
-        print(job_count)
-        for job in jobs:
-            forms.append(FavoritesForm(prefix=str(job["idx"])))
-
-        # BOOKMARK SECTION
-        not_display_favorites = True
-        bookmark_jobs(jobs, user_data, users_data, forms, not_display_favorites)
+        displaying_favorites = False
+        bookmark_jobs(jobs, user_data, users_data, forms, displaying_favorites, request_info)
 
     return render_template("jobs.html", title="Entry-Level CS Jobs", form=form, user_input=user_input, user=user_data, jobs=jobs, job_count=job_count, forms=forms)
 
@@ -208,21 +187,21 @@ def display_favorites(user_id):
     with open('users.json', 'r+') as jsonfile:  # seperate function (users-r)
         users_data = json.loads(jsonfile.read())
         jsonfile.close()
-
+    user_data = None
     for user in users_data:
         if user["ID"] == user_id:
             user_data = user
-
-    user_idx = users_data.index(user_data)
-    users_data.pop(user_idx)
     jobs = user_data["favorites"]
     job_count = len(user_data["favorites"])
     # create forms for each job
     forms = []
     for i in range(job_count):
         forms.append(FavoritesForm(prefix=str(i)))
-
-    not_display_favorites = False
-    bookmark_jobs(jobs, user_data, users_data, forms, not_display_favorites)
+    print(request.form.to_dict())
+    if request.method == "POST" and "checked" in list(request.form.to_dict()):
+        print("editing favorites")
+        request_info = request.form.to_dict()
+        displaying_favorites = True
+        update_jobs(jobs, user_data, users_data, forms, displaying_favorites, request_info)
 
     return render_template("favorites.html", title="Favorite Jobs", user=user_data, jobs=jobs, job_count=job_count, forms=forms)

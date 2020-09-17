@@ -52,6 +52,9 @@
 .submit-button:focus {
 	outline: 0;
 }
+.submit-button:hover {
+    background-color: rgb(231, 154, 12); 
+}
 .login-sub {
 	color: rgba(255, 255, 255, 0.6);
 	text-align: center;

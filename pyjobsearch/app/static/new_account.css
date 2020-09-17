@@ -36,6 +36,9 @@
 .button:focus {
 	outline:0;
 }
+.button:hover {
+    background-color: rgb(231, 154, 12); 
+}
 .login-input {
 	font: inherit;
 	font-size: inherit;
