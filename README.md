@@ -6,4 +6,4 @@ A job posting website that pulls data from several other websites. All jobs were
 
 This website was created using Python, Flask, BeautifulSoup, Javascript, CSS, and HTML. It was deployed to Heroku.
 
-Website URL: [Heroku](http://github.com)
+Website URL: [PyJobSearch on Heroku](https://pyjobsearch.herokuapp.com/)
